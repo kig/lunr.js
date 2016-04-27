@@ -30,6 +30,7 @@ test('dumping and loading a packed index', function () {
   deepEqual(idx.search('green plant'), clonedIdx.search('green plant'))
 })
 
+
 test('dumping and loading a packed index with a populated pipeline', function () {
   var idx = lunr(function () {
     this.field('title', { boost: 10 })
@@ -43,4 +44,23 @@ test('dumping and loading a packed index with a populated pipeline', function ()
 
   deepEqual(idx.pipeline._stack, clonedIdx.pipeline._stack)
   deepEqual(idx.search('water'), clonedIdx.search('water'))
+})
+
+
+test('dumping and loading a packed index with a populated pipeline and quantized TFs', function () {
+  var idx = lunr(function () {
+    this.field('title', { boost: 10 })
+    this.field('body')
+  })
+
+  this.corpus.forEach(function (doc) { idx.add(doc) })
+
+  var dumpedIdx = JSON.stringify(idx.toPackedJSON(32)),
+      clonedIdx = lunr.Index.load(JSON.parse(dumpedIdx))
+
+  deepEqual(idx.pipeline._stack, clonedIdx.pipeline._stack)
+  var tokens = ['water', 'green plant', 'scarlet', 'professor', 'mustard', 'green candlestick', 'database', 'reference metric', ''];
+  for (var i=0; i<tokens.length; i++) {
+    deepEqual(idx.search(tokens[i]).map(function(d) { return d.ref }), clonedIdx.search(tokens[i]).map(function(d) { return d.ref }))
+  }
 })
